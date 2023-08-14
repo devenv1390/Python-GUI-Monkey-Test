@@ -13,14 +13,20 @@
 # https://doc.qt.io/qtforpython/licenses.html
 #
 # ///////////////////////////////////////////////////////////////
-
+import ctypes
 import sys
 import os
 import platform
+import time
+
+from PySide6 import QtGui, QtCore
+from PySide6.QtCore import QEventLoop
 
 # IMPORT / GUI AND MODULES AND WIDGETS
 # ///////////////////////////////////////////////////////////////
 from modules import *
+from utils.adb import Adb
+from utils.monkey import Monkey
 from widgets import *
 
 os.environ["QT_FONT_DPI"] = "200"  # FIX Problem for High DPI and Scale above 100%
@@ -30,16 +36,68 @@ os.environ["QT_FONT_DPI"] = "200"  # FIX Problem for High DPI and Scale above 10
 widgets = None
 
 
+# 自定义的输出流，将输出重定向到某个地方
+class Stream(QObject):
+    """Redirects console output to text widget."""
+    newText = Signal(str)
+
+    def write(self, text):
+        # 发出内容
+        self.newText.emit(str(text))
+
+    def flush(self):  # real signature unknown; restored from __doc__
+        """ flush(self) """
+        pass
+
+
+class NewThread(QThread):
+    finishSignal = Signal(str)
+
+    def __init__(self, parent=None):
+        super(NewThread, self).__init__(parent)
+        self.is_paused = bool(0)  # 标记线程是否暂停
+        self.mutex = QMutex()  # 互斥锁，用于线程同步
+        self.cond = QWaitCondition()  # 等待条件，用于线程暂停和恢复
+
+    def pause_thread(self):
+        with QMutexLocker(self.mutex):
+            self.is_paused = True  # 设置线程为暂停状态
+
+    def resume_thread(self):
+        if self.is_paused:
+            with QMutexLocker(self.mutex):
+                self.is_paused = False  # 设置线程为非暂停状态
+                self.cond.wakeOne()  # 唤醒一个等待的线程
+
+    def run(self):
+        timer = 0
+        while True:
+            with QMutexLocker(self.mutex):
+                while self.is_paused:
+                    self.cond.wait(self.mutex)  # 当线程暂停时，等待条件满足
+                timer += 1
+                adb = Adb()
+                Adb.SumDic(adb)
+                time.sleep(1)
+            self.finishSignal.emit("1")
+
+
 class MainWindow(QMainWindow):
     def __init__(self):
         QMainWindow.__init__(self)
 
         # SET AS GLOBAL WIDGETS
         # ///////////////////////////////////////////////////////////////
+        self.dragPos = None
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         global widgets
         widgets = self.ui
+        self.thread_running = False
+        self.is_working = False
+
+        # Custom output stream.
+        sys.stdout = Stream(newText=self.onUpdateText)
 
         # USE CUSTOM TITLE BAR | USE AS "False" FOR MAC OR LINUX
         # ///////////////////////////////////////////////////////////////
@@ -73,6 +131,9 @@ class MainWindow(QMainWindow):
         widgets.btn_widgets.clicked.connect(self.buttonClick)
         widgets.btn_new.clicked.connect(self.buttonClick)
         widgets.btn_save.clicked.connect(self.buttonClick)
+
+        widgets.btn_monkey.clicked.connect(self.buttonClick)
+        widgets.btn_save_monkey.clicked.connect(self.buttonClick)
 
         # EXTRA LEFT BOX
         def openCloseLeftBox():
@@ -109,6 +170,30 @@ class MainWindow(QMainWindow):
         widgets.stackedWidget.setCurrentWidget(widgets.home)
         widgets.btn_home.setStyleSheet(UIFunctions.selectMenu(widgets.btn_home.styleSheet()))
 
+    # 重定向文本
+    # ///////////////////////////////////////////////////////////////
+
+    def onUpdateText(self, text):
+        """Write console output to text widget."""
+        cursor = self.ui.textEdit_cmd.textCursor()
+        cursor.movePosition(QTextCursor.End)
+        cursor.insertText(text)
+        self.ui.textEdit_cmd.setTextCursor(cursor)
+        self.ui.textEdit_cmd.ensureCursorVisible()
+
+    def genMastClicked(self):
+        """Runs the main function."""
+        print('Running...')
+        # print("1")
+        # self.thread1.finishSignal.connect()
+        self.thread1 = NewThread()
+        self.thread1.flag = True
+        self.thread1.start()
+        loop = QEventLoop()
+        QTimer.singleShot(2000, loop.quit)
+        loop.exec()
+        # print('Done.')
+
     # BUTTONS CLICK
     # Post here your functions for clicked buttons
     # ///////////////////////////////////////////////////////////////
@@ -134,6 +219,25 @@ class MainWindow(QMainWindow):
             widgets.stackedWidget.setCurrentWidget(widgets.new_page)  # SET PAGE
             UIFunctions.resetStyle(self, btnName)  # RESET ANOTHERS BUTTONS SELECTED
             btn.setStyleSheet(UIFunctions.selectMenu(btn.styleSheet()))  # SELECT MENU
+
+        # 开始monkey测试
+        if btnName == "btn_monkey":
+            self.genMastClicked()
+            self.is_working = True
+
+        if btnName == "btn_save_monkey":
+            if self.is_working:
+                if self.thread_running:
+                    self.thread1.quit()  # 终止线程的事件循环
+                    self.thread_running = False  # 标记线程停止
+                    print("stop thread")
+                    self.is_working = False
+                else:
+                    self.thread_running = True
+                    self.thread1.pause_thread()
+                    print("pause thread")
+            else:
+                QMessageBox.information(self, "提示", "当前没有任务在运行")
 
         if btnName == "btn_save":
             print("Save BTN clicked!")
@@ -164,4 +268,4 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     app.setWindowIcon(QIcon("icon.ico"))
     window = MainWindow()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
