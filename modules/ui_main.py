@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import sys
-
 ################################################################################
 ## Form generated from reading UI file 'maingnxZcz.ui'
 ##
@@ -12,7 +11,7 @@ import sys
 from PySide6.QtCore import *
 from PySide6.QtGui import *
 from PySide6.QtWidgets import *
-
+from PySide6.QtCharts import *
 from .resources_rc import *
 
 
@@ -1384,13 +1383,56 @@ class Ui_MainWindow(object):
         self.new_page.setObjectName(u"new_page")
         self.verticalLayout_20 = QVBoxLayout(self.new_page)
         self.verticalLayout_20.setObjectName(u"verticalLayout_20")
-        self.textEdit_cmd = QTextEdit(self.new_page)
-        self.textEdit_cmd.setObjectName(u"textEdit_cmd")
-
-        self.verticalLayout_20.addWidget(self.textEdit_cmd)
-
         self.verticalLayout_21 = QVBoxLayout()
         self.verticalLayout_21.setObjectName(u"verticalLayout_21")
+        self.scrollArea_2 = QScrollArea(self.new_page)
+        self.scrollArea_2.setObjectName(u"scrollArea_2")
+        self.scrollArea_2.setStyleSheet(u" QScrollBar:vertical {\n"
+"    background: rgb(52, 59, 72);\n"
+" }\n"
+" QScrollBar:horizontal {\n"
+"    background: rgb(52, 59, 72);\n"
+" }")
+        self.scrollArea_2.setFrameShape(QFrame.NoFrame)
+        self.scrollArea_2.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOn)
+        self.scrollArea_2.setWidgetResizable(True)
+        self.scrollAreaWidgetContents_3 = QWidget()
+        self.scrollAreaWidgetContents_3.setObjectName(u"scrollAreaWidgetContents_3")
+        self.scrollAreaWidgetContents_3.setGeometry(QRect(0, -314, 1150, 1736))
+        self.verticalLayout_25 = QVBoxLayout(self.scrollAreaWidgetContents_3)
+        self.verticalLayout_25.setObjectName(u"verticalLayout_25")
+        self.groupBox_monkey = QGroupBox(self.scrollAreaWidgetContents_3)
+        self.groupBox_monkey.setObjectName(u"groupBox_monkey")
+        self.groupBox_monkey.setMinimumSize(QSize(0, 300))
+        self.groupBox_monkey.setBaseSize(QSize(0, 0))
+        self.groupBox_monkey.setFlat(False)
+        self.groupBox_monkey.setCheckable(False)
+
+        self.verticalLayout_25.addWidget(self.groupBox_monkey)
+
+        self.plainTextEdit_cmd = QPlainTextEdit(self.scrollAreaWidgetContents_3)
+        self.plainTextEdit_cmd.setObjectName(u"plainTextEdit_cmd")
+        self.plainTextEdit_cmd.setMinimumSize(QSize(0, 200))
+        self.plainTextEdit_cmd.setStyleSheet(u"background-color: rgb(33, 37, 43);")
+
+        self.verticalLayout_25.addWidget(self.plainTextEdit_cmd)
+
+        self.graphicsView_cpu = QChartView(self.scrollAreaWidgetContents_3)
+        self.graphicsView_cpu.setObjectName(u"graphicsView_cpu")
+        self.graphicsView_cpu.setMinimumSize(QSize(0, 600))
+
+        self.verticalLayout_25.addWidget(self.graphicsView_cpu)
+
+        self.graphicsView_mem = QChartView(self.scrollAreaWidgetContents_3)
+        self.graphicsView_mem.setObjectName(u"graphicsView_mem")
+        self.graphicsView_mem.setMinimumSize(QSize(0, 600))
+
+        self.verticalLayout_25.addWidget(self.graphicsView_mem)
+
+        self.scrollArea_2.setWidget(self.scrollAreaWidgetContents_3)
+
+        self.verticalLayout_21.addWidget(self.scrollArea_2)
+
         self.horizontalLayout_6 = QHBoxLayout()
         self.horizontalLayout_6.setObjectName(u"horizontalLayout_6")
         self.btn_monkey = QPushButton(self.new_page)
@@ -1678,14 +1720,7 @@ class Ui_MainWindow(object):
         ___qtablewidgetitem23.setText(QCoreApplication.translate("MainWindow", u"Line", None));
         self.tableWidget.setSortingEnabled(__sortingEnabled)
 
-        self.textEdit_cmd.setHtml(QCoreApplication.translate("MainWindow", u"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><meta charset=\"utf-8\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"hr { height: 1px; border-width: 0; }\n"
-"li.unchecked::marker { content: \"\\2610\"; }\n"
-"li.checked::marker { content: \"\\2612\"; }\n"
-"</style></head><body style=\" font-family:'Segoe UI'; font-size:10pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">test</p></body></html>", None))
+        self.groupBox_monkey.setTitle(QCoreApplication.translate("MainWindow", u"Monkey\u6d4b\u8bd5\u53c2\u6570", None))
         self.btn_monkey.setText(QCoreApplication.translate("MainWindow", u"\u5f00\u59cbmonkey\u6d4b\u8bd5", None))
         self.btn_save_monkey.setText(QCoreApplication.translate("MainWindow", u"\u4fdd\u5b58\u8bbe\u7f6e", None))
         self.btn_message.setText(QCoreApplication.translate("MainWindow", u"Message", None))
@@ -1694,5 +1729,4 @@ class Ui_MainWindow(object):
         self.creditsLabel.setText(QCoreApplication.translate("MainWindow", u"By: Wanderson M. Pimenta", None))
         self.version.setText(QCoreApplication.translate("MainWindow", u"v1.0.3", None))
     # retranslateUi
-
 

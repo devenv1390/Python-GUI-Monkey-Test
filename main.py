@@ -13,6 +13,7 @@
 # https://doc.qt.io/qtforpython/licenses.html
 #
 # ///////////////////////////////////////////////////////////////
+import csv
 import ctypes
 import sys
 import os
@@ -20,11 +21,13 @@ import platform
 import time
 
 from PySide6 import QtGui, QtCore
-from PySide6.QtCore import QEventLoop
+from PySide6.QtCharts import QLineSeries, QChart
+from PySide6.QtCore import QEventLoop, QMutexLocker
 
 # IMPORT / GUI AND MODULES AND WIDGETS
 # ///////////////////////////////////////////////////////////////
 from modules import *
+from modules import Settings
 from utils.adb import Adb
 from utils.monkey import Monkey
 from widgets import *
@@ -76,10 +79,17 @@ class NewThread(QThread):
                 while self.is_paused:
                     self.cond.wait(self.mutex)  # 当线程暂停时，等待条件满足
                 timer += 1
-                adb = Adb()
-                Adb.SumDic(adb)
-                time.sleep(1)
-            self.finishSignal.emit("1")
+                # print(timer)
+                adb = Adb("com.example.CCAS")
+                list_v = adb.sum_dic()
+                cpu = list_v[3]
+                mem = list_v[2]
+                # print(f"list_v = {list_v}")
+                with open(r"./test_data/{}".format("test.csv"), 'a', newline="") as f:
+                    write = csv.writer(f)
+                    write.writerow([timer, cpu, mem])
+                time.sleep(2)
+                self.finishSignal.emit("1")
 
 
 class MainWindow(QMainWindow):
@@ -155,7 +165,7 @@ class MainWindow(QMainWindow):
         # SET CUSTOM THEME
         # ///////////////////////////////////////////////////////////////
         useCustomTheme = False
-        themeFile = "themes\py_dracula_light.qss"
+        themeFile = "themes\py_dracula_dark.qss"
 
         # SET THEME AND HACKS
         if useCustomTheme:
@@ -175,11 +185,11 @@ class MainWindow(QMainWindow):
 
     def onUpdateText(self, text):
         """Write console output to text widget."""
-        cursor = self.ui.textEdit_cmd.textCursor()
+        cursor = self.ui.plainTextEdit_cmd.textCursor()
         cursor.movePosition(QTextCursor.End)
         cursor.insertText(text)
-        self.ui.textEdit_cmd.setTextCursor(cursor)
-        self.ui.textEdit_cmd.ensureCursorVisible()
+        self.ui.plainTextEdit_cmd.setTextCursor(cursor)
+        self.ui.plainTextEdit_cmd.ensureCursorVisible()
 
     def genMastClicked(self):
         """Runs the main function."""
@@ -193,6 +203,36 @@ class MainWindow(QMainWindow):
         QTimer.singleShot(2000, loop.quit)
         loop.exec()
         # print('Done.')
+
+    def display_cpu_info(self):
+        with open(r'./test_data/{}'.format("test.csv"), 'r') as f:
+            reader = f.readlines()
+            reader_last = reader[-1].replace("\\n", "").split(",")
+            # print(reader_last)
+            col = int(reader_last[0])
+            cpu = float(reader_last[1])
+
+        self.series_cpu.append(col, cpu)
+        self.chart_cpu = QChart()
+        self.chart_cpu.setTitle("CPU占用率")
+        self.chart_cpu.addSeries(self.series_cpu)
+        self.chart_cpu.createDefaultAxes()
+        self.ui.graphicsView_cpu.setChart(self.chart_cpu)
+
+    def display_mem_info(self):
+        with open(r'./test_data/{}'.format("test.csv"), 'r') as f:
+            reader = f.readlines()
+            reader_last = reader[-1].replace("\\n", "").split(",")
+            # print(reader_last)
+            col = int(reader_last[0])
+            mem = float(reader_last[2])
+
+        self.series_mem.append(col, mem)
+        self.chart_mem = QChart()
+        self.chart_mem.setTitle("内存占用(MB)")
+        self.chart_mem.addSeries(self.series_mem)
+        self.chart_mem.createDefaultAxes()
+        self.ui.graphicsView_mem.setChart(self.chart_mem)
 
     # BUTTONS CLICK
     # Post here your functions for clicked buttons
@@ -220,10 +260,23 @@ class MainWindow(QMainWindow):
             UIFunctions.resetStyle(self, btnName)  # RESET ANOTHERS BUTTONS SELECTED
             btn.setStyleSheet(UIFunctions.selectMenu(btn.styleSheet()))  # SELECT MENU
 
+            self.series_mem = QLineSeries()
+            self.series_cpu = QLineSeries()
+            self.series_cpu.setName("CPU")
+            self.series_mem.setName("内存")
+
         # 开始monkey测试
         if btnName == "btn_monkey":
-            self.genMastClicked()
-            self.is_working = True
+            if not self.is_working:
+                # self.genMastClicked()
+                self.thread1 = NewThread()
+                self.thread1.flag = True
+                self.thread1.finishSignal.connect(self.display_cpu_info)
+                self.thread1.finishSignal.connect(self.display_mem_info)
+                self.thread1.start()
+                self.is_working = True
+            else:
+                QMessageBox.warning(self, "警告", "当前已有任务在运行，请勿多次启动")
 
         if btnName == "btn_save_monkey":
             if self.is_working:

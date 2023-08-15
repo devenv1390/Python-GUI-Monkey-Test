@@ -1,6 +1,4 @@
 import os
-import re
-
 
 class Monkey:
     def test(self):
