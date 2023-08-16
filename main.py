@@ -28,7 +28,7 @@ from PySide6.QtCore import QEventLoop, QMutexLocker
 # ///////////////////////////////////////////////////////////////
 from modules import *
 from modules import Settings
-from utils.adb import Adb
+from utils.get_system_info import GetSystemInfo
 from utils.monkey import Monkey
 from widgets import *
 
@@ -53,6 +53,7 @@ class Stream(QObject):
         pass
 
 
+# 开启新线程
 class NewThread(QThread):
     finishSignal = Signal(str)
 
@@ -80,14 +81,15 @@ class NewThread(QThread):
                     self.cond.wait(self.mutex)  # 当线程暂停时，等待条件满足
                 timer += 1
                 # print(timer)
-                adb = Adb("com.example.CCAS")
+                adb = GetSystemInfo("com.example.CCAS")
                 list_v = adb.sum_dic()
                 cpu = list_v[3]
+                system_cpu = list_v[4]
                 mem = list_v[2]
                 # print(f"list_v = {list_v}")
                 with open(r"./test_data/{}".format("test.csv"), 'a', newline="") as f:
                     write = csv.writer(f)
-                    write.writerow([timer, cpu, mem])
+                    write.writerow([timer, cpu, system_cpu, mem])
                 time.sleep(2)
                 self.finishSignal.emit("1")
 
@@ -180,7 +182,7 @@ class MainWindow(QMainWindow):
         widgets.stackedWidget.setCurrentWidget(widgets.home)
         widgets.btn_home.setStyleSheet(UIFunctions.selectMenu(widgets.btn_home.styleSheet()))
 
-    # 重定向文本
+    # 主要功能UI逻辑
     # ///////////////////////////////////////////////////////////////
 
     def onUpdateText(self, text):
@@ -211,11 +213,14 @@ class MainWindow(QMainWindow):
             # print(reader_last)
             col = int(reader_last[0])
             cpu = float(reader_last[1])
+            system_cpu = float(reader_last[2])
 
         self.series_cpu.append(col, cpu)
+        self.series_system_cpu.append(col, system_cpu)
         self.chart_cpu = QChart()
         self.chart_cpu.setTitle("CPU占用率")
         self.chart_cpu.addSeries(self.series_cpu)
+        self.chart_cpu.addSeries(self.series_system_cpu)
         self.chart_cpu.createDefaultAxes()
         self.ui.graphicsView_cpu.setChart(self.chart_cpu)
 
@@ -225,7 +230,7 @@ class MainWindow(QMainWindow):
             reader_last = reader[-1].replace("\\n", "").split(",")
             # print(reader_last)
             col = int(reader_last[0])
-            mem = float(reader_last[2])
+            mem = float(reader_last[3])
 
         self.series_mem.append(col, mem)
         self.chart_mem = QChart()
@@ -262,7 +267,9 @@ class MainWindow(QMainWindow):
 
             self.series_mem = QLineSeries()
             self.series_cpu = QLineSeries()
+            self.series_system_cpu = QLineSeries()
             self.series_cpu.setName("CPU")
+            self.series_system_cpu.setName("系统CPU")
             self.series_mem.setName("内存")
 
         # 开始monkey测试

@@ -2738,9 +2738,9 @@ background-repeat: no-repeat;</string>
                             <property name="geometry">
                              <rect>
                               <x>0</x>
-                              <y>0</y>
+                              <y>-864</y>
                               <width>1150</width>
-                              <height>936</height>
+                              <height>1736</height>
                              </rect>
                             </property>
                             <layout class="QVBoxLayout" name="verticalLayout_25">
@@ -2770,32 +2770,6 @@ background-repeat: no-repeat;</string>
                               </widget>
                              </item>
                              <item>
-                              <widget class="QGraphicsView" name="graphicsView_cpu">
-                               <property name="minimumSize">
-                                <size>
-                                 <width>0</width>
-                                 <height>200</height>
-                                </size>
-                               </property>
-                               <property name="frameShape">
-                                <enum>QFrame::StyledPanel</enum>
-                               </property>
-                              </widget>
-                             </item>
-                             <item>
-                              <widget class="QGraphicsView" name="graphicsView_mem">
-                               <property name="minimumSize">
-                                <size>
-                                 <width>0</width>
-                                 <height>200</height>
-                                </size>
-                               </property>
-                               <property name="frameShape">
-                                <enum>QFrame::StyledPanel</enum>
-                               </property>
-                              </widget>
-                             </item>
-                             <item>
                               <widget class="QPlainTextEdit" name="plainTextEdit_cmd">
                                <property name="minimumSize">
                                 <size>
@@ -2805,6 +2779,26 @@ background-repeat: no-repeat;</string>
                                </property>
                                <property name="styleSheet">
                                 <string notr="true">background-color: rgb(33, 37, 43);</string>
+                               </property>
+                              </widget>
+                             </item>
+                             <item>
+                              <widget class="QChartView" name="graphicsView_cpu">
+                               <property name="minimumSize">
+                                <size>
+                                 <width>0</width>
+                                 <height>600</height>
+                                </size>
+                               </property>
+                              </widget>
+                             </item>
+                             <item>
+                              <widget class="QChartView" name="graphicsView_mem">
+                               <property name="minimumSize">
+                                <size>
+                                 <width>0</width>
+                                 <height>600</height>
+                                </size>
                                </property>
                               </widget>
                              </item>
@@ -3172,6 +3166,13 @@ background-repeat: no-repeat;</string>
    </layout>
   </widget>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QChartView</class>
+   <extends>QGraphicsView</extends>
+   <header location="global">qchartview.h</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="resources.qrc"/>
  </resources>

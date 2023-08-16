@@ -5,7 +5,7 @@ import re
 import time
 
 
-class Adb:
+class GetSystemInfo:
 
     def __init__(self, package_name):
         self.package = package_name
@@ -95,10 +95,10 @@ class Adb:
         }
         list_v = list(sum_dic_dit.values())  # .replace("[", "").replace("]", "").replace("'", "")
         print(f"时间: {sum_dic_dit['time']}, 包名: {sum_dic_dit['package']}, "
-              f"内存: {sum_dic_dit['mem']} MB, CPU: {sum_dic_dit['cpu']} %")
+              f"内存: {sum_dic_dit['mem']} MB, CPU: {sum_dic_dit['cpu']} %, 系统CPU: {sum_dic_dit['systemCpu']} %")
         return list_v
 
 
 if __name__ == '__main__':
     testName = "1"
-    a = Adb(testName, "")
+    a = GetSystemInfo(testName, "")
