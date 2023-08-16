@@ -18,6 +18,7 @@ import ctypes
 import sys
 import os
 import platform
+import threading
 import time
 
 from PySide6 import QtGui, QtCore
@@ -29,7 +30,7 @@ from PySide6.QtCore import QEventLoop, QMutexLocker
 from modules import *
 from modules import Settings
 from utils.get_system_info import GetSystemInfo
-from utils.monkey import Monkey
+from utils.monkey import Monkey, get_info
 from widgets import *
 
 os.environ["QT_FONT_DPI"] = "200"  # FIX Problem for High DPI and Scale above 100%
@@ -107,6 +108,26 @@ class MainWindow(QMainWindow):
         widgets = self.ui
         self.thread_running = False
         self.is_working = False
+        self.set_event = {
+            "touch": 0,
+            "motion": 0,
+            "trackball": 0,
+            "nav": 0,
+            "majornav": 0,
+            "syskeys": 0,
+            "appswitch": 0,
+            "pinchzoom": 0,
+            "rotation": 0,
+            "flip": 0,
+            "anyevent": 0,
+        }
+        self.set_ignore = {
+            "--ignore-crashes": False,
+            "--ignore-timeouts": False,
+            "--ignore-security-exceptions": False,
+            "--ignore-native-crashes": False,
+            "--monitor-native-crashes": False,
+        }
 
         # Custom output stream.
         sys.stdout = Stream(newText=self.onUpdateText)
@@ -139,13 +160,23 @@ class MainWindow(QMainWindow):
         # ///////////////////////////////////////////////////////////////
 
         # LEFT MENUS
-        widgets.btn_home.clicked.connect(self.buttonClick)
-        widgets.btn_widgets.clicked.connect(self.buttonClick)
-        widgets.btn_new.clicked.connect(self.buttonClick)
-        widgets.btn_save.clicked.connect(self.buttonClick)
+        widgets.btn_home.clicked.connect(self.button_click)
+        widgets.btn_widgets.clicked.connect(self.button_click)
+        widgets.btn_new.clicked.connect(self.button_click)
+        widgets.btn_save1.clicked.connect(self.button_click)
 
-        widgets.btn_monkey.clicked.connect(self.buttonClick)
-        widgets.btn_save_monkey.clicked.connect(self.buttonClick)
+        # 功能按钮
+        widgets.btn_monkey.clicked.connect(self.button_click)
+        widgets.btn_save_monkey.clicked.connect(self.button_click)
+        widgets.btn_generateTest.clicked.connect(self.generate_test_data)
+        widgets.btn_generateTest_2.clicked.connect(self.button_click)
+
+        # CHECK BOX
+        widgets.checkBox_security.clicked.connect(self.checkbox_click)
+        widgets.checkBox_crash.clicked.connect(self.checkbox_click)
+        widgets.checkBox_timeout.clicked.connect(self.checkbox_click)
+        widgets.checkBox_monitor_native_crash.clicked.connect(self.checkbox_click)
+        widgets.checkBox_native_crash.clicked.connect(self.checkbox_click)
 
         # EXTRA LEFT BOX
         def openCloseLeftBox():
@@ -187,11 +218,11 @@ class MainWindow(QMainWindow):
 
     def onUpdateText(self, text):
         """Write console output to text widget."""
-        cursor = self.ui.plainTextEdit_cmd.textCursor()
+        cursor = widgets.plainTextEdit_cmd.textCursor()
         cursor.movePosition(QTextCursor.End)
         cursor.insertText(text)
-        self.ui.plainTextEdit_cmd.setTextCursor(cursor)
-        self.ui.plainTextEdit_cmd.ensureCursorVisible()
+        widgets.plainTextEdit_cmd.setTextCursor(cursor)
+        widgets.plainTextEdit_cmd.ensureCursorVisible()
 
     def genMastClicked(self):
         """Runs the main function."""
@@ -205,6 +236,27 @@ class MainWindow(QMainWindow):
         QTimer.singleShot(2000, loop.quit)
         loop.exec()
         # print('Done.')
+
+    def flash_text_line_cmd(self):
+        cmd = Monkey(package=widgets.lineEdit_package.text(), epoch=widgets.lineEdit_epoch.text(),
+                     seed=widgets.lineEdit_seed.text(), throttle=widgets.lineEdit_throttle.text(),
+                     level=int(widgets.lineEdit_level.text()), event=self.set_event,
+                     ignore=self.set_ignore).combine_cmd()
+        return cmd
+
+    def generate_test_data(self):
+        info = get_info()
+        if info["device"] == "null":
+            QMessageBox.warning(self, "警告", "未检测到设备，请检查设备连接")
+        if info["package"] == "null":
+            QMessageBox.warning(self, "警告", "未检测到正在运行的应用，请将需要测试的应用置于前台")
+        widgets.lineEdit_package.setText(info["package"])
+        widgets.lineEdit_epoch.setText("10000")
+        widgets.lineEdit_seed.setText("11")
+        widgets.lineEdit_throttle.setText("300")
+        widgets.lineEdit_level.setText("3")
+        cmd = self.flash_text_line_cmd()
+        widgets.lineEdit_cmd.setText(cmd)
 
     def display_cpu_info(self):
         with open(r'./test_data/{}'.format("test.csv"), 'r') as f:
@@ -222,7 +274,7 @@ class MainWindow(QMainWindow):
         self.chart_cpu.addSeries(self.series_cpu)
         self.chart_cpu.addSeries(self.series_system_cpu)
         self.chart_cpu.createDefaultAxes()
-        self.ui.graphicsView_cpu.setChart(self.chart_cpu)
+        widgets.graphicsView_cpu.setChart(self.chart_cpu)
 
     def display_mem_info(self):
         with open(r'./test_data/{}'.format("test.csv"), 'r') as f:
@@ -237,32 +289,56 @@ class MainWindow(QMainWindow):
         self.chart_mem.setTitle("内存占用(MB)")
         self.chart_mem.addSeries(self.series_mem)
         self.chart_mem.createDefaultAxes()
-        self.ui.graphicsView_mem.setChart(self.chart_mem)
+        widgets.graphicsView_mem.setChart(self.chart_mem)
+
+    # CHECKBOX CLICK
+    # Post here your functions for clicked check_boxs
+    # ///////////////////////////////////////////////////////////////
+    def checkbox_click(self):
+        check_box = self.sender()
+        check_box_name = check_box.objectName()
+
+        if check_box_name == "checkBox_crash":
+            self.set_ignore["--ignore-crashes"] = not self.set_ignore["--ignore-crashes"]
+
+        if check_box_name == "checkBox_security":
+            self.set_ignore["--ignore-security-exceptions"] = not self.set_ignore["--ignore-security-exceptions"]
+
+        if check_box_name == "checkBox_timeout":
+            self.set_ignore["--ignore-timeouts"] = not self.set_ignore["--ignore-timeouts"]
+
+        if check_box_name == "checkBox_native_crash":
+            self.set_ignore["--ignore-native-crashes"] = not self.set_ignore["--ignore-native-crashes"]
+
+        if check_box_name == "checkBox_monitor_native_crash":
+            self.set_ignore["--monitor-native-crashes"] = not self.set_ignore["--monitor-native-crashes"]
+
+        print(f'CheckBox "{check_box_name}" pressed!')
 
     # BUTTONS CLICK
     # Post here your functions for clicked buttons
     # ///////////////////////////////////////////////////////////////
-    def buttonClick(self):
+    def button_click(self):
         # GET BUTTON CLICKED
         btn = self.sender()
-        btnName = btn.objectName()
+        btn_name = btn.objectName()
 
         # SHOW HOME PAGE
-        if btnName == "btn_home":
+        if btn_name == "btn_home":
             widgets.stackedWidget.setCurrentWidget(widgets.home)
-            UIFunctions.resetStyle(self, btnName)
+            UIFunctions.resetStyle(self, btn_name)
             btn.setStyleSheet(UIFunctions.selectMenu(btn.styleSheet()))
 
         # SHOW WIDGETS PAGE
-        if btnName == "btn_widgets":
+        if btn_name == "btn_widgets":
             widgets.stackedWidget.setCurrentWidget(widgets.widgets)
-            UIFunctions.resetStyle(self, btnName)
+            UIFunctions.resetStyle(self, btn_name)
             btn.setStyleSheet(UIFunctions.selectMenu(btn.styleSheet()))
 
         # SHOW NEW PAGE
-        if btnName == "btn_new":
+        if btn_name == "btn_new":
             widgets.stackedWidget.setCurrentWidget(widgets.new_page)  # SET PAGE
-            UIFunctions.resetStyle(self, btnName)  # RESET ANOTHERS BUTTONS SELECTED
+            UIFunctions.resetStyle(self, btn_name)  # RESET ANOTHERS BUTTONS SELECTED
             btn.setStyleSheet(UIFunctions.selectMenu(btn.styleSheet()))  # SELECT MENU
 
             self.series_mem = QLineSeries()
@@ -273,7 +349,7 @@ class MainWindow(QMainWindow):
             self.series_mem.setName("内存")
 
         # 开始monkey测试
-        if btnName == "btn_monkey":
+        if btn_name == "btn_monkey":
             if not self.is_working:
                 # self.genMastClicked()
                 self.thread1 = NewThread()
@@ -285,7 +361,7 @@ class MainWindow(QMainWindow):
             else:
                 QMessageBox.warning(self, "警告", "当前已有任务在运行，请勿多次启动")
 
-        if btnName == "btn_save_monkey":
+        if btn_name == "btn_save_monkey":
             if self.is_working:
                 if self.thread_running:
                     self.thread1.quit()  # 终止线程的事件循环
@@ -299,11 +375,11 @@ class MainWindow(QMainWindow):
             else:
                 QMessageBox.information(self, "提示", "当前没有任务在运行")
 
-        if btnName == "btn_save":
+        if btn_name == "btn_save1":
             print("Save BTN clicked!")
 
         # PRINT BTN NAME
-        print(f'Button "{btnName}" pressed!')
+        print(f'Button "{btn_name}" pressed!')
 
     # RESIZE EVENTS
     # ///////////////////////////////////////////////////////////////

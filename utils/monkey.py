@@ -1,10 +1,42 @@
 import os
+import threading
 import time
+
+
+def get_parameter(*_args, **_kwargs):
+    def outer(func):
+        def inner(*args, **kwargs):
+            thread = threading.Thread(target=func, args=args, kwargs=kwargs)
+            thread.start()
+            return thread
+
+        return inner
+
+    return outer
+
+
+def get_info():
+    try:
+        device = os.popen("adb devices").read()
+        device = device.split(" ")[-1].split("\n")[1].split("\t")[0]
+        print(f"device: {device}")
+    except Exception as e:
+        print("exception: ", e)
+        device = "null"
+    try:
+        package = os.popen('adb shell dumpsys activity | findstr "mResumedActivity" ').read()
+        package = package.split(" ")[-2].split("/")[0]
+        print(f"package: {package}")
+    except Exception as e:
+        print("exception: ", e)
+        package = "null"
+    info_dic = {"device": device, "package": package}
+    return info_dic
 
 
 class Monkey:
 
-    def __init__(self, package=None, epoch=0, level=0, throttle=0, seed=11, event=None):
+    def __init__(self, package=None, epoch=0, level=0, throttle=0, seed=11, event=None, ignore=None):
         self.cmd = None
         if event is None:
             event = {
@@ -20,20 +52,25 @@ class Monkey:
                 "flip": 0,
                 "anyevent": 0,
             }
+        if ignore is None:
+            ignore = {
+                "--ignore-crashes": False,
+                "--ignore-timeouts": False,
+                "--ignore-security-exceptions": False,
+                "--ignore-native-crashes": False,
+                "--monitor-native-crashes": False,
+            }
         self.package = package
         self.epoch = epoch
         self.level = level
         self.throttle = throttle
         self.seed = seed
         self.event = event
-
-    def get_devices(self):
-        content = os.popen("adb devices").read()
-        print(content)
+        self.ignore = ignore
 
     def run_monkey_test(self):
         cmd = self.combine_cmd()
-        os.popen(cmd)
+        os.system(cmd)
 
     def combine_cmd(self):
         self.cmd = "adb shell monkey "
@@ -46,6 +83,7 @@ class Monkey:
         self.__set__ignore()
         # print(self.cmd)
         return self.cmd
+
     def __set_package(self):
         self.cmd += "-p " + self.package + " "
 
@@ -70,7 +108,9 @@ class Monkey:
                 self.cmd += "--pct-" + key + " " + self.event[key].__str__() + " "
 
     def __set__ignore(self):
-        self.cmd += "--ignore-crashes --ignore-timeouts --ignore-security-exceptions --ignore-native-crashes"
+        for key in self.ignore:
+            if self.ignore[key]:
+                self.cmd += key + " "
 
 
 if __name__ == "__main__":
@@ -79,5 +119,6 @@ if __name__ == "__main__":
         "motion": 50,
     }
     test = Monkey(package="com.example.CCAS", epoch=10, throttle=300, event=event, level=3)
-    test.run_monkey_test()
+    get_info()
+    # test.run_monkey_test()
     # test.get_devices()
