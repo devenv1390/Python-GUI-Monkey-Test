@@ -68,9 +68,12 @@ class Monkey:
         self.event = event
         self.ignore = ignore
 
-    def run_monkey_test(self):
-        cmd = self.combine_cmd()
-        os.system(cmd)
+    def run_monkey_test(self, line_cmd=None):
+        if not line_cmd:
+            cmd = self.combine_cmd()
+            os.system(cmd)
+        else:
+            os.system(line_cmd)
 
     def combine_cmd(self):
         self.cmd = "adb shell monkey "
