@@ -59,11 +59,12 @@ class Stream(QObject):
 class NewThread(QThread):
     finishSignal = Signal(str)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, package=None):
         super(NewThread, self).__init__(parent)
         self.is_paused = bool(0)  # 标记线程是否暂停
         self.mutex = QMutex()  # 互斥锁，用于线程同步
         self.cond = QWaitCondition()  # 等待条件，用于线程暂停和恢复
+        self.package = package
 
     def pause_thread(self):
         with QMutexLocker(self.mutex):
@@ -83,7 +84,7 @@ class NewThread(QThread):
                     self.cond.wait(self.mutex)  # 当线程暂停时，等待条件满足
                 timer += 1
                 # print(timer)
-                adb = GetSystemInfo("com.example.CCAS")
+                adb = GetSystemInfo(self.package)
                 list_v = adb.sum_dic()
                 cpu = list_v[3]
                 system_cpu = list_v[4]
@@ -429,7 +430,8 @@ class MainWindow(QMainWindow):
             if not self.is_working:
                 if self.check_safe():
                     # self.genMastClicked()
-                    self.thread1 = NewThread()
+                    package = self.ui.lineEdit_package.text()
+                    self.thread1 = NewThread(package=package)
                     self.thread1.flag = True
                     self.thread1.finishSignal.connect(self.display_cpu_info)
                     self.thread1.finishSignal.connect(self.display_mem_info)
