@@ -24,6 +24,7 @@ import time
 from PySide6 import QtGui, QtCore
 from PySide6.QtCharts import QLineSeries, QChart
 from PySide6.QtCore import QEventLoop, QMutexLocker
+from PySide6.scripts.metaobjectdump import Signal
 
 # IMPORT / GUI AND MODULES AND WIDGETS
 # ///////////////////////////////////////////////////////////////
@@ -166,10 +167,10 @@ class MainWindow(QMainWindow):
         widgets.btn_save1.clicked.connect(self.button_click)
 
         # 功能按钮
-        widgets.btn_monkey.clicked.connect(self.button_click)
-        widgets.btn_save_monkey.clicked.connect(self.button_click)
+        widgets.btn_start_monkey.clicked.connect(self.button_click)
+        widgets.btn_pause.clicked.connect(self.button_click)
         widgets.btn_generateTest.clicked.connect(self.generate_test_data)
-        widgets.btn_generateTest_2.clicked.connect(self.button_click)
+        widgets.btn_save_cmd.clicked.connect(self.button_click)
 
         # CHECK BOX
         widgets.checkBox_security.clicked.connect(self.checkbox_click)
@@ -424,7 +425,7 @@ class MainWindow(QMainWindow):
             self.series_mem.setName("内存")
 
         # 开始monkey测试
-        if btn_name == "btn_monkey":
+        if btn_name == "btn_start_monkey":
             if not self.is_working:
                 # self.genMastClicked()
                 self.thread1 = NewThread()
@@ -436,7 +437,7 @@ class MainWindow(QMainWindow):
             else:
                 QMessageBox.warning(self, "警告", "当前已有任务在运行，请勿多次启动")
 
-        if btn_name == "btn_save_monkey":
+        if btn_name == "btn_pause":
             if self.is_working:
                 if self.thread_running:
                     self.thread1.quit()  # 终止线程的事件循环
