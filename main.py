@@ -237,26 +237,101 @@ class MainWindow(QMainWindow):
         loop.exec()
         # print('Done.')
 
-    def flash_text_line_cmd(self):
-        cmd = Monkey(package=widgets.lineEdit_package.text(), epoch=widgets.lineEdit_epoch.text(),
-                     seed=widgets.lineEdit_seed.text(), throttle=widgets.lineEdit_throttle.text(),
-                     level=int(widgets.lineEdit_level.text()), event=self.set_event,
-                     ignore=self.set_ignore).combine_cmd()
+    def check_sum(self):
+        sum_event = 0
+        for key in self.set_event:
+            if int(self.set_event[key]) < 0:
+                return False
+            sum_event += int(self.set_event[key])
+        if sum_event > 100:
+            return False
+        else:
+            return True
+
+    def check_safe(self):
+        self.save_event()
+        self.save_ignore()
+        if not self.ui.lineEdit_package.text() or self.ui.lineEdit_package.text() == "null":
+            QMessageBox.warning(self, "警告", "包名为空")
+            return False
+        if not self.ui.lineEdit_epoch.text():
+            QMessageBox.warning(self, "警告", "测试次数为空")
+            return False
+        if not self.check_sum():
+            QMessageBox.warning(self, "警告", "事件概率总和超过100%或存在负数")
+            return False
+        return True
+
+    def save_cmd(self):
+
+        QMessageBox.information(self, "提示", "参数已保存")
+
+    def save_event(self):
+        self.set_event['touch'] = int(self.ui.lineEdit_touch.text())
+        self.set_event['motion'] = int(self.ui.lineEdit_motion.text())
+        self.set_event['trackball'] = int(self.ui.lineEdit_trackball.text())
+        self.set_event['nav'] = int(self.ui.lineEdit_nav.text())
+        self.set_event['majornav'] = int(self.ui.lineEdit_majorNav.text())
+        self.set_event['syskeys'] = int(self.ui.lineEdit_syskeys.text())
+        self.set_event['appswitch'] = int(self.ui.lineEdit_appSwitch.text())
+        self.set_event['pinchzoom'] = int(self.ui.lineEdit_zoom.text())
+        self.set_event['rotation'] = int(self.ui.lineEdit_rotation.text())
+        self.set_event['flip'] = int(self.ui.lineEdit_keyboard.text())
+        self.set_event['anyevent'] = int(self.ui.lineEdit_anything.text())
+
+    def save_ignore(self):
+        self.set_ignore["--ignore-crashes"] = self.ui.checkBox_crash.isChecked()
+        self.set_ignore["--ignore-security-exceptions"] = self.ui.checkBox_security.isChecked()
+        self.set_ignore["--ignore-timeouts"] = self.ui.checkBox_timeout.isChecked()
+        self.set_ignore["--ignore-native-crashes"] = self.ui.checkBox_native_crash.isChecked()
+        self.set_ignore["--motion-native-crashes"] = self.ui.checkBox_monitor_native_crash.isChecked()
+
+    def get_monkey(self):
+        cmd = Monkey(package=self.ui.lineEdit_package.text(), epoch=self.ui.lineEdit_epoch.text(),
+                     seed=self.ui.lineEdit_seed.text(), throttle=self.ui.lineEdit_throttle.text(),
+                     level=int(self.ui.lineEdit_level.text()), event=self.set_event,
+                     ignore=self.set_ignore)
         return cmd
 
-    def generate_test_data(self):
+    def generate_base_data(self):
         info = get_info()
         if info["device"] == "null":
             QMessageBox.warning(self, "警告", "未检测到设备，请检查设备连接")
         if info["package"] == "null":
             QMessageBox.warning(self, "警告", "未检测到正在运行的应用，请将需要测试的应用置于前台")
-        widgets.lineEdit_package.setText(info["package"])
-        widgets.lineEdit_epoch.setText("10000")
-        widgets.lineEdit_seed.setText("11")
-        widgets.lineEdit_throttle.setText("300")
-        widgets.lineEdit_level.setText("3")
-        cmd = self.flash_text_line_cmd()
-        widgets.lineEdit_cmd.setText(cmd)
+        self.ui.lineEdit_package.setText(info["package"])
+        self.ui.lineEdit_epoch.setText("10000")
+        self.ui.lineEdit_seed.setText("11")
+        self.ui.lineEdit_throttle.setText("300")
+        self.ui.lineEdit_level.setText("3")
+
+    def generate_event_data(self):
+        self.ui.lineEdit_touch.setText("50")
+        self.ui.lineEdit_motion.setText("50")
+        self.ui.lineEdit_anything.setText("0")
+        self.ui.lineEdit_zoom.setText("0")
+        self.ui.lineEdit_appSwitch.setText("0")
+        self.ui.lineEdit_keyboard.setText("0")
+        self.ui.lineEdit_majorNav.setText("0")
+        self.ui.lineEdit_nav.setText("0")
+        self.ui.lineEdit_rotation.setText("0")
+        self.ui.lineEdit_trackball.setText("0")
+        self.ui.lineEdit_syskeys.setText("0")
+        self.save_event()
+
+    def generate_ignore_data(self):
+        self.ui.checkBox_crash.setChecked(True)
+        self.ui.checkBox_timeout.setChecked(True)
+        self.ui.checkBox_security.setChecked(True)
+        self.ui.checkBox_native_crash.setChecked(True)
+        self.save_ignore()
+
+    def generate_test_data(self):
+        self.generate_base_data()
+        self.generate_event_data()
+        self.generate_ignore_data()
+        cmd = self.get_monkey().combine_cmd()
+        self.ui.lineEdit_cmd.setText(cmd)
 
     def display_cpu_info(self):
         with open(r'./test_data/{}'.format("test.csv"), 'r') as f:
