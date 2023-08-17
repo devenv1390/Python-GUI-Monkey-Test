@@ -420,20 +420,23 @@ class MainWindow(QMainWindow):
             self.series_mem = QLineSeries()
             self.series_cpu = QLineSeries()
             self.series_system_cpu = QLineSeries()
-            self.series_cpu.setName("CPU")
-            self.series_system_cpu.setName("系统CPU")
-            self.series_mem.setName("内存")
+            self.series_cpu.setName("CPU占用率")
+            self.series_system_cpu.setName("系统CPU占用率")
+            self.series_mem.setName("内存占用")
 
         # 开始monkey测试
         if btn_name == "btn_start_monkey":
             if not self.is_working:
-                # self.genMastClicked()
-                self.thread1 = NewThread()
-                self.thread1.flag = True
-                self.thread1.finishSignal.connect(self.display_cpu_info)
-                self.thread1.finishSignal.connect(self.display_mem_info)
-                self.thread1.start()
-                self.is_working = True
+                if self.check_safe():
+                    # self.genMastClicked()
+                    self.thread1 = NewThread()
+                    self.thread1.flag = True
+                    self.thread1.finishSignal.connect(self.display_cpu_info)
+                    self.thread1.finishSignal.connect(self.display_mem_info)
+                    self.thread1.start()
+                    monkey = self.get_monkey()
+                    monkey.run_monkey_test()
+                    self.is_working = True
             else:
                 QMessageBox.warning(self, "警告", "当前已有任务在运行，请勿多次启动")
 

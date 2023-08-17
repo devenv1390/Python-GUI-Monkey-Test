@@ -68,6 +68,7 @@ class Monkey:
         self.event = event
         self.ignore = ignore
 
+    @get_parameter()
     def run_monkey_test(self, line_cmd=None):
         if not line_cmd:
             cmd = self.combine_cmd()
