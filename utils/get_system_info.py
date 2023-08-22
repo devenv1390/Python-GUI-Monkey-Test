@@ -10,7 +10,7 @@ class GetSystemInfo:
     def __init__(self, package_name):
         self.package = package_name
 
-    def get_PID(self, package):
+    def get_pid(self, package):
         if int(str((os.popen("adb shell getprop ro.build.version.release").readlines())).replace(
                 "'", "").replace("\\n", "").replace("]", " ").replace("[", " ").split('.')[0]) >= 8:
             cmd = "adb shell ps -A"
@@ -35,15 +35,7 @@ class GetSystemInfo:
     def get_mem(self, package):
         try:
             cmd = r'adb shell dumpsys meminfo ' + package + ' | findstr "TOTAL"'  # % apk_file
-            # cmd1 = 'adb shell cat /proc/meminfo | findstr "MemTotal"'
             red_cmd = str((os.popen(cmd).readlines()))
-            # res = int(re.findall(r"\d+\.?\d*", red_cmd)[0])
-            # # print(res)
-            # total = int(str((os.popen(cmd1).readlines())).replace(" ", "").replace("MemTotal:", "").replace("kB", "")
-            #             .replace("\\n", "").replace("]", "").replace("[", "").replace("'", ""))
-            # # print(total)
-            # per = round(res / total, 3)
-            # return per
             return re.findall(r"\d+\.?\d*", red_cmd)[0]
         except Exception as e:
             print(str(e), "get_mem(package)，请检查包名是否正确……")
@@ -72,15 +64,10 @@ class GetSystemInfo:
             return [-1, -1, -1, -1, -1, -1, -1]
 
     def sum_dic(self):
-        pid = self.get_PID(self.package)
+        pid = self.get_pid(self.package)
         total_cpu1, idle1, avg_cpu1 = self.get_cpu(pid)
-
-        # bt = "'time', 'package', 'mem', 'cpu', 'systemCpu', 'rxBytes', 'txBytes', 'rxTcpBytes', 'txTcpBytes'".replace(
-        #     "'", "").replace(" ", "")
-        # self.csv.info(bt)
         time_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
         mem = round(int(self.get_mem(self.package)) / 1024, 3)
-        # mem = self.get_mem(self.package)
         total_cpu2, idle2, avg_cpu2 = self.get_cpu(pid)
         p_cpu = 100.0 * (int(avg_cpu2) - int(avg_cpu1)) / (int(total_cpu2) - int(total_cpu1))  # process cpu
         system_cpu = 100.0 * ((int(total_cpu2) - int(idle2)) - (int(total_cpu1) - int(idle1))) / (
@@ -101,4 +88,4 @@ class GetSystemInfo:
 
 if __name__ == '__main__':
     testName = "1"
-    a = GetSystemInfo(testName, "")
+    a = GetSystemInfo(testName)

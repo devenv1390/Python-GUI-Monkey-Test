@@ -55,7 +55,7 @@ class Stream(QObject):
         pass
 
 
-# 开启新线程
+# 开启UI新线程
 class NewThread(QThread):
     finishSignal = Signal(str)
 
@@ -131,7 +131,7 @@ class MainWindow(QMainWindow):
             "--monitor-native-crashes": False,
         }
 
-        # Custom output stream.
+        # Custom output stream 自定义输出流.
         sys.stdout = Stream(newText=self.onUpdateText)
 
         # USE CUSTOM TITLE BAR | USE AS "False" FOR MAC OR LINUX
@@ -140,8 +140,8 @@ class MainWindow(QMainWindow):
 
         # APP NAME
         # ///////////////////////////////////////////////////////////////
-        title = "PyDracula - Modern GUI"
-        description = "PyDracula APP - Theme with colors based on Dracula for Python."
+        title = "PyLing - Monkey可视化"
+        description = "PyLing APP - Monkey可视化低代码测试软件"
         # APPLY TEXTS
         self.setWindowTitle(title)
         widgets.titleRightInfo.setText(description)
@@ -199,7 +199,7 @@ class MainWindow(QMainWindow):
 
         # SET CUSTOM THEME
         # ///////////////////////////////////////////////////////////////
-        useCustomTheme = False
+        useCustomTheme = True
         themeFile = "themes\py_dracula_dark.qss"
 
         # SET THEME AND HACKS
@@ -239,6 +239,7 @@ class MainWindow(QMainWindow):
         loop.exec()
         # print('Done.')
 
+    # 检查事件概率总和是否超过100或低于0
     def check_sum(self):
         sum_event = 0
         for key in self.set_event:
@@ -250,6 +251,7 @@ class MainWindow(QMainWindow):
         else:
             return True
 
+    # 检查所有选项是否正确填写
     def check_safe(self):
         self.save_event()
         self.save_ignore()
@@ -264,10 +266,12 @@ class MainWindow(QMainWindow):
             return False
         return True
 
+    # 保存lineEdit_cmd里的内容
     def save_cmd(self):
 
         QMessageBox.information(self, "提示", "参数已保存")
 
+    # 保存事件概率
     def save_event(self):
         self.set_event['touch'] = int(self.ui.lineEdit_touch.text())
         self.set_event['motion'] = int(self.ui.lineEdit_motion.text())
@@ -281,6 +285,7 @@ class MainWindow(QMainWindow):
         self.set_event['flip'] = int(self.ui.lineEdit_keyboard.text())
         self.set_event['anyevent'] = int(self.ui.lineEdit_anything.text())
 
+    # 保存忽略事件
     def save_ignore(self):
         self.set_ignore["--ignore-crashes"] = self.ui.checkBox_crash.isChecked()
         self.set_ignore["--ignore-security-exceptions"] = self.ui.checkBox_security.isChecked()
@@ -288,6 +293,7 @@ class MainWindow(QMainWindow):
         self.set_ignore["--ignore-native-crashes"] = self.ui.checkBox_native_crash.isChecked()
         self.set_ignore["--motion-native-crashes"] = self.ui.checkBox_monitor_native_crash.isChecked()
 
+    # 实例化Monkey
     def get_monkey(self):
         cmd = Monkey(package=self.ui.lineEdit_package.text(), epoch=self.ui.lineEdit_epoch.text(),
                      seed=self.ui.lineEdit_seed.text(), throttle=self.ui.lineEdit_throttle.text(),
@@ -295,6 +301,7 @@ class MainWindow(QMainWindow):
                      ignore=self.set_ignore)
         return cmd
 
+    # 自动生成基础测试数据
     def generate_base_data(self):
         info = get_info()
         if info["device"] == "null":
@@ -307,6 +314,7 @@ class MainWindow(QMainWindow):
         self.ui.lineEdit_throttle.setText("300")
         self.ui.lineEdit_level.setText("3")
 
+    # 自动生成事件概率数据
     def generate_event_data(self):
         self.ui.lineEdit_touch.setText("50")
         self.ui.lineEdit_motion.setText("50")
@@ -321,6 +329,7 @@ class MainWindow(QMainWindow):
         self.ui.lineEdit_syskeys.setText("0")
         self.save_event()
 
+    # 自动选择忽略事件
     def generate_ignore_data(self):
         self.ui.checkBox_crash.setChecked(True)
         self.ui.checkBox_timeout.setChecked(True)
@@ -328,6 +337,7 @@ class MainWindow(QMainWindow):
         self.ui.checkBox_native_crash.setChecked(True)
         self.save_ignore()
 
+    # 生成测试数据
     def generate_test_data(self):
         self.generate_base_data()
         self.generate_event_data()
@@ -335,6 +345,7 @@ class MainWindow(QMainWindow):
         cmd = self.get_monkey().combine_cmd()
         self.ui.lineEdit_cmd.setText(cmd)
 
+    # 展示CPU占用率实时图表
     def display_cpu_info(self):
         with open(r'./test_data/{}'.format("test.csv"), 'r') as f:
             reader = f.readlines()
@@ -353,6 +364,7 @@ class MainWindow(QMainWindow):
         self.chart_cpu.createDefaultAxes()
         widgets.graphicsView_cpu.setChart(self.chart_cpu)
 
+    # 展示内存占用率实时图表
     def display_mem_info(self):
         with open(r'./test_data/{}'.format("test.csv"), 'r') as f:
             reader = f.readlines()
